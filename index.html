@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة المهام المصغرة - MicroTasks TN</title>
+    <title>منصة المهام الصوتية - MicroTasks TN</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style> body { font-family: 'Cairo', sans-serif; } </style>
@@ -13,8 +13,8 @@
     <!-- Header -->
     <header class="bg-white shadow-sm py-4 px-6 flex justify-between items-center">
         <div class="flex items-center space-x-2 space-x-reverse">
-            <span class="bg-indigo-600 text-white font-bold p-2 rounded-xl text-lg">⚡ TasksTN</span>
-            <h1 class="font-bold text-xl text-slate-700 hidden sm:inline">منصة المهام المصغرة</h1>
+            <span class="bg-indigo-600 text-white font-bold p-2 rounded-xl text-lg">🎙️ VoiceTN</span>
+            <h1 class="font-bold text-xl text-slate-700 hidden sm:inline">منصة المهام الصوتية بالدارجة</h1>
         </div>
         <div id="user-info" class="hidden flex items-center space-x-4 space-x-reverse">
             <div class="text-right">
@@ -48,12 +48,12 @@
             </form>
         </div>
 
-        <!-- 2. Worker Dashboard Section -->
+        <!-- 2. Worker Dashboard Section (Voice Tasks) -->
         <div id="dashboard-section" class="hidden w-full max-w-2xl space-y-6">
             <div class="bg-gradient-to-r from-indigo-600 to-violet-600 text-white p-6 rounded-2xl shadow-lg flex justify-between items-center">
                 <div>
-                    <h2 class="text-2xl font-bold">مرحباً بك مجدداً!</h2>
-                    <p class="text-indigo-100 text-sm mt-1">أكمل المهام أدناه لزيادة أرباحك.</p>
+                    <h2 class="text-2xl font-bold">مهام التسجيل الصوتي 🎙️</h2>
+                    <p class="text-indigo-100 text-sm mt-1">اقرأ العبارة التالية بوضوح وبصوت طبيعي بالدارجة.</p>
                 </div>
                 <div class="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl text-center border border-white/20">
                     <span class="block text-xs text-indigo-200">الرصيد الحالي</span>
@@ -61,21 +61,41 @@
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-100">
+            <!-- Voice Task Box -->
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-100 text-center">
                 <div class="flex justify-between items-center mb-4">
-                    <span class="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">مهمة تصنيف صور</span>
-                    <span class="text-xs text-slate-400">المكافأة: <strong class="text-emerald-600">+0.100 د.ت</strong></span>
+                    <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">مهمة صوتية (Voice Dataset)</span>
+                    <span class="text-xs text-slate-400">المكافأة: <strong class="text-emerald-600">+0.200 د.ت</strong></span>
                 </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center mb-6">
-                    <div class="w-full h-48 bg-slate-200 rounded-lg flex items-center justify-center mb-4 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=500&auto=format&fit=crop&q=60" alt="Task" class="w-full h-full object-cover">
-                    </div>
-                    <p class="text-sm font-semibold text-slate-700 text-center">هل تحتوي هذه الصورة على سيارة واضحة؟</p>
+                
+                <!-- Phrase to Read -->
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-6">
+                    <span class="block text-xs text-slate-400 mb-2">اقرأ الجملة هذه بصوتك:</span>
+                    <p id="task-phrase" class="text-xl font-bold text-slate-800 leading-relaxed">
+                        "ألو، بالله نحب نسأل على سوم الكرهبة والصيانة قداش تكلف في المداخيل الشهرية؟"
+                    </p>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="submitTask('yes')" class="bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition">نعم (Yes)</button>
-                    <button onclick="submitTask('no')" class="bg-rose-600 text-white font-bold py-3 rounded-xl hover:bg-rose-700 transition">لا (No)</button>
+
+                <!-- Recorder Status -->
+                <p id="rec-status" class="text-sm font-semibold text-slate-500 mb-4">اضغط على زر التسجيل للبدء</p>
+
+                <!-- Recording Controls -->
+                <div class="flex justify-center gap-4 mb-6">
+                    <button id="start-rec-btn" onclick="startRecording()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-md flex items-center gap-2">
+                        🔴 بدء التسجيل
+                    </button>
+                    <button id="stop-rec-btn" onclick="stopRecording()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-6 py-3 rounded-xl transition shadow-md hidden">
+                        ⏹️ إيقاف التسجيل
+                    </button>
                 </div>
+
+                <!-- Audio Preview -->
+                <audio id="audio-preview" controls class="w-full mb-4 hidden"></audio>
+
+                <!-- Submit Button -->
+                <button id="submit-audio-btn" onclick="submitAudioTask()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-100 hidden">
+                    إرسال التسجيل وكسب المكافأة (0.200 د.ت)
+                </button>
             </div>
         </div>
 
@@ -88,7 +108,7 @@
                 <form onsubmit="createNewUser(event)" class="space-y-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-600 mb-1">كود المستخدم الجديد (Username)</label>
-                        <input type="text" id="new-username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: worker02">
+                        <input type="text" id="new-username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: mourad01">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-600 mb-1">كلمة السر (Password)</label>
@@ -105,9 +125,9 @@
     </main>
 
     <!-- Footer -->
-    <footer class="text-center py-4 text-xs text-slate-400">&copy; 2026 MicroTasks TN Platform. جميع الحقوق محفوظة.</footer>
+    <footer class="text-center py-4 text-xs text-slate-400">&copy; 2026 VoiceTN Platform. جميع الحقوق محفوظة.</footer>
 
-    <!-- Firebase Logic -->
+    <!-- Firebase Logic & Audio Recorder -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, query, where, getDocs, doc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -128,6 +148,19 @@
 
         let currentUser = null;
         let currentUserId = null;
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob = null;
+
+        // Dynamic Phrases for Voice Tasks
+        const phrases = [
+            "ألو، بالله نحب نسأل على سوم الكرهبة والصيانة قداش تكلف في الشهر؟",
+            "وينها محطة اللواج من هنا، قداش تبعد عليا؟",
+            "السلام عليكم، بربي فمة دواء مقطوع في الصيدلية ولا موجود؟",
+            "اليوم الطقس سخون برشا، الواحد لازم يمشي للبحر في دجربة.",
+            "بربي كيفاش نعمل باش نجدد الباسبور وإلا بطاقة عدد ثلاثة؟"
+        ];
+        let currentPhraseIndex = 0;
 
         window.handleLogin = async function(event) {
             event.preventDefault();
@@ -136,7 +169,6 @@
             const errorDiv = document.getElementById('login-error');
             errorDiv.classList.add('hidden');
 
-            // اختصار دوريجين للأدمن باش تدخل طول من غير ما تصنعه في الفايربيس
             if (usernameInput === 'admin' && passwordInput === 'admin') {
                 currentUser = { username: 'admin', role: 'admin' };
                 currentUserId = 'admin_local';
@@ -190,16 +222,69 @@
             document.getElementById('login-form').reset();
         };
 
-        window.submitTask = async function(answer) {
-            if (!currentUserId) return;
+        // Voice Recording Functions
+        window.startRecording = async function() {
+            audioChunks = [];
             try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audioPlayer = document.getElementById('audio-preview');
+                    audioPlayer.src = audioUrl;
+                    audioPlayer.classList.remove('hidden');
+                    document.getElementById('submit-audio-btn').classList.remove('hidden');
+                };
+
+                mediaRecorder.start();
+                document.getElementById('start-rec-btn').classList.add('hidden');
+                document.getElementById('stop-rec-btn').classList.remove('hidden');
+                document.getElementById('rec-status').textContent = '🔴 جاري التسجيل... اقرأ الجملة بوضوح بالدارجة';
+            } catch (err) {
+                alert('الرجاء السماح للمتصفح بالوصول إلى الميكروفون.');
+                console.error(err);
+            }
+        };
+
+        window.stopRecording = function() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                document.getElementById('stop-rec-btn').classList.add('hidden');
+                document.getElementById('start-rec-btn').classList.remove('hidden');
+                document.getElementById('rec-status').textContent = '✅ تم إيقاف التسجيل. يمكنك الاستماع أو الإرسال.';
+            }
+        };
+
+        window.submitAudioTask = async function() {
+            if (!audioBlob || !currentUserId) return;
+            try {
+                // زيادة الرصيد 0.200 د.ت في Firebase
                 const userRef = doc(db, "users", currentUserId);
-                await updateDoc(userRef, { balance: increment(0.100) });
-                currentUser.balance = (currentUser.balance || 0) + 0.100;
+                await updateDoc(userRef, { balance: increment(0.200) });
+                currentUser.balance = (currentUser.balance || 0) + 0.200;
                 updateBalanceDisplay(currentUser.balance);
-                alert("تم إنجاز المهمة بنجاح!");
+
+                alert("تم إرسال التسجيل الصوتي بنجاح وإضافة 0.200 د.ت لرصيدك!");
+                
+                // الانتقال للجملة التالية أوتوماتيكياً
+                currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
+                document.getElementById('task-phrase').textContent = `"${phrases[currentPhraseIndex]}"`;
+                
+                // إعادة ضبط الواجهة
+                audioBlob = null;
+                document.getElementById('audio-preview').classList.add('hidden');
+                document.getElementById('submit-audio-btn').classList.add('hidden');
+                document.getElementById('rec-status').textContent = 'اضغط على زر التسجيل لقراءة العبارة التالية';
+
             } catch (error) {
-                alert("خطأ في حفظ المهمة.");
+                console.error("Error submitting audio:", error);
+                alert("حدث خطأ أثناء حفظ التسجيل في قاعدة البيانات.");
             }
         };
 

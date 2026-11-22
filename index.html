@@ -27,7 +27,7 @@
 
     <!-- Main Content -->
     <main class="flex-grow flex items-center justify-center p-4">
-        
+
         <!-- 1. Login Section -->
         <div id="login-section" class="bg-emerald-950 text-emerald-50 p-8 rounded-2xl shadow-2xl w-full max-w-md border-2 border-emerald-400">
             <div class="text-center mb-6">
@@ -68,7 +68,7 @@
                     <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">مهمة صوتية (Voice Dataset)</span>
                     <span class="text-xs text-slate-400">المكافأة: <strong class="text-emerald-600">+0.200 د.ت</strong></span>
                 </div>
-                
+
                 <!-- Phrase to Read -->
                 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-6">
                     <span class="block text-xs text-slate-400 mb-2">اقرأ الجملة هذه بصوتك:</span>
@@ -138,7 +138,7 @@
             <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
                 <h3 class="text-xl font-bold text-slate-800 mb-1">إضافة مستخدم جديد مباشرة</h3>
                 <p class="text-sm text-slate-500 mb-4">ينشئ الحساب في Firebase Authentication ويحفظ ملفه في Firestore دون تسجيل خروجك كأدمن</p>
-                
+
                 <form onsubmit="createNewWorkerAccount(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-slate-600 mb-1">كود المستخدم (Username)</label>
@@ -166,7 +166,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <h3 class="text-xl font-bold text-slate-800">مراجعة المهام المعلقة (Pending)</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">استمع للتسجيل الصوتي وتأكد من صحة النطق قبل القبول (+0.200 د.ت) أو الرفض</p>
+                        <p class="text-xs text-slate-500 mt-0.5">استمع للتسجيل الصوتي: القبول يضيف +0.200 د.ت ويحفظ الصوت، والرفض يحذف الصوت من Firestore</p>
                     </div>
                     <button onclick="loadPendingSubmissions()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition">
                         🔄 تحديث المهام
@@ -205,7 +205,8 @@
             query,
             where,
             runTransaction,
-            serverTimestamp
+            serverTimestamp,
+            deleteField
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -601,7 +602,7 @@
                                         ✅ قبول (+0.200)
                                     </button>
                                     <button ${isBusy ? 'disabled' : ''} onclick="reviewSubmission('${safeId}', false)" class="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition">
-                                        ❌ رفض
+                                        ❌ رفض وحذف الصوت
                                     </button>
                                 </div>
                             </div>
@@ -611,7 +612,7 @@
                                            <span class="block text-xs text-slate-500 mb-1 font-semibold">🎧 الاستماع للتسجيل الصوتي:</span>
                                            <audio controls preload="metadata" src="${safeAudioUrl}" class="w-full h-10"></audio>
                                        </div>`
-                                    : `<div class="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">المقطع الصوتي غير متوفر في هذه المهمة القديمة.</div>`
+                                    : `<div class="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">المقطع الصوتي غير متوفر في هذه المهمة.</div>`
                             }
                         </div>
                     `;
@@ -676,13 +677,18 @@
                     } else {
                         transaction.update(subRef, {
                             status: "rejected",
+                            audioDataUrl: deleteField(),
                             reviewedBy: currentUserId,
                             reviewedAt: serverTimestamp()
                         });
                     }
                 });
 
-                alert(approve ? "تم قبول المهمة وإضافة 0.200 د.ت إلى رصيد المستخدم." : "تم رفض المهمة ولم يُضف أي رصيد.");
+                alert(
+                    approve
+                        ? "تم قبول المهمة وإضافة 0.200 د.ت إلى رصيد المستخدم مع الإبقاء على التسجيل الصوتي."
+                        : "تم رفض المهمة وحذف التسجيل الصوتي من Firestore ولم يُضف أي رصيد."
+                );
             } catch (error) {
                 console.error("Review error:", error);
                 alert(error.message || "حدث خطأ أثناء مراجعة المهمة.");

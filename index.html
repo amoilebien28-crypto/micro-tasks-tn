@@ -166,7 +166,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <h3 class="text-xl font-bold text-slate-800">مراجعة المهام المعلقة (Pending)</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">اقبل المهمة الصحيحة لصرف +0.200 د.ت، أو ارفض المهمة غير السليمة</p>
+                        <p class="text-xs text-slate-500 mt-0.5">استمع للتسجيل الصوتي وتأكد من صحة النطق قبل القبول (+0.200 د.ت) أو الرفض</p>
                     </div>
                     <button onclick="loadPendingSubmissions()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition">
                         🔄 تحديث المهام
@@ -236,6 +236,8 @@
         let isSubmittingTask = false;
         let busySubmissionIds = new Set();
 
+        const MAX_INLINE_AUDIO_BYTES = 700 * 1024;
+
         const phrases = [
             "ألو، بالله نحب نسأل على سوم الكرهبة والصيانة قداش تكلف في الشهر؟",
             "وينها محطة اللواج من هنا، قداش تبعد عليا؟",
@@ -251,6 +253,22 @@
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;");
+        }
+
+        function sanitizeAudioDataUrl(dataUrl) {
+            if (typeof dataUrl !== "string") return "";
+            return /^data:audio\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/i.test(dataUrl)
+                ? dataUrl
+                : "";
+        }
+
+        function blobToDataUrl(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error("تعذر قراءة الملف الصوتي."));
+                reader.readAsDataURL(blob);
+            });
         }
 
         function releaseMicrophoneStream() {
@@ -419,6 +437,11 @@
                 return;
             }
 
+            if (audioBlob.size > MAX_INLINE_AUDIO_BYTES) {
+                alert("حجم التسجيل الصوتي كبير جداً. حاول تسجيل الجملة بشكل أقصر.");
+                return;
+            }
+
             isSubmittingTask = true;
             const submitBtn = document.getElementById('submit-audio-btn');
             submitBtn.disabled = true;
@@ -427,12 +450,15 @@
             stopRecorderAndMicrophone();
 
             try {
+                const audioDataUrl = await blobToDataUrl(audioBlob);
+
                 await addDoc(collection(db, "task_submissions"), {
                     userId: currentUserId,
                     username: currentUser?.username || "",
                     phraseIndex: currentPhraseIndex,
                     phraseText: phrases[currentPhraseIndex],
                     audioSize: audioBlob.size,
+                    audioDataUrl: audioDataUrl,
                     rewardAmount: 0.200,
                     status: "pending",
                     createdAt: serverTimestamp()
@@ -550,25 +576,33 @@
                     const safeUser = escapeHtml(item.username || item.userId || "مجهول");
                     const safePhrase = escapeHtml(item.phraseText || "");
                     const sizeKb = ((Number(item.audioSize || 0)) / 1024).toFixed(1);
+                    const safeAudioUrl = sanitizeAudioDataUrl(item.audioDataUrl);
 
                     return `
-                        <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="font-bold text-indigo-700">${safeUser}</span>
-                                    <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">pending</span>
-                                    <span class="text-xs text-slate-400">حجم الصوت: ${sizeKb} KB</span>
+                        <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col gap-3">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="font-bold text-indigo-700">${safeUser}</span>
+                                        <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">pending</span>
+                                        <span class="text-xs text-slate-400">حجم الصوت: ${sizeKb} KB</span>
+                                    </div>
+                                    <p class="text-slate-800 font-semibold text-sm">"${safePhrase}"</p>
                                 </div>
-                                <p class="text-slate-800 font-semibold text-sm">"${safePhrase}"</p>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button ${isBusy ? 'disabled' : ''} onclick="reviewSubmission('${safeId}', true)" class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition">
+                                        ✅ قبول (+0.200)
+                                    </button>
+                                    <button ${isBusy ? 'disabled' : ''} onclick="reviewSubmission('${safeId}', false)" class="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition">
+                                        ❌ رفض
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0">
-                                <button ${isBusy ? 'disabled' : ''} onclick="reviewSubmission('${safeId}', true)" class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition">
-                                    ✅ قبول (+0.200)
-                                </button>
-                                <button ${isBusy ? 'disabled' : ''} onclick="reviewSubmission('${safeId}', false)" class="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition">
-                                    ❌ رفض
-                                </button>
-                            </div>
+                            ${
+                                safeAudioUrl
+                                    ? `<audio controls preload="none" src="${safeAudioUrl}" class="w-full h-10 rounded-lg"></audio>`
+                                    : `<div class="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">المقطع الصوتي غير متوفر في هذه المهمة القديمة.</div>`
+                            }
                         </div>
                     `;
                 }).join("");

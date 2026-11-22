@@ -95,7 +95,7 @@
 
                 <!-- Submit Button -->
                 <button id="submit-audio-btn" onclick="submitAudioTask()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-100 hidden">
-                    إرسال التسجيل وكسب المكافأة (0.200 د.ت)
+                    إرسال التسجيل للمراجعة (0.200 د.ت)
                 </button>
             </div>
         </div>
@@ -146,8 +146,9 @@
             doc,
             getDoc,
             setDoc,
-            updateDoc,
-            increment
+            collection,
+            addDoc,
+            serverTimestamp
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -171,6 +172,7 @@
         let audioStream = null;
         let audioChunks = [];
         let audioBlob = null;
+        let isSubmittingTask = false;
 
         const phrases = [
             "ألو، بالله نحب نسأل على سوم الكرهبة والصيانة قداش تكلف في الشهر؟",
@@ -181,7 +183,6 @@
         ];
         let currentPhraseIndex = 0;
 
-        // دالة إيقاف الميكروفون وتحرير المسارات الصوتية فوراً
         function releaseMicrophoneStream() {
             if (audioStream) {
                 audioStream.getTracks().forEach((track) => track.stop());
@@ -340,22 +341,33 @@
         };
 
         window.submitAudioTask = async function() {
-            if (!audioBlob || !currentUserId) return;
+            if (!audioBlob || !currentUserId || isSubmittingTask) return;
 
-            // إغلاق الميكروفون فوراً عند الإرسال
+            if (audioBlob.size <= 500) {
+                alert("التسجيل الصوتي قصير أو فارغ جداً. أعد التسجيل بصوت واضح.");
+                return;
+            }
+
+            isSubmittingTask = true;
+            const submitBtn = document.getElementById('submit-audio-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'جاري إرسال المهمة...';
+
             stopRecorderAndMicrophone();
 
             try {
-                const userRef = doc(db, "users", currentUserId);
-                await updateDoc(userRef, { balance: increment(0.200) });
+                await addDoc(collection(db, "task_submissions"), {
+                    userId: currentUserId,
+                    username: currentUser?.username || "",
+                    phraseIndex: currentPhraseIndex,
+                    phraseText: phrases[currentPhraseIndex],
+                    audioSize: audioBlob.size,
+                    rewardAmount: 0.200,
+                    status: "pending",
+                    createdAt: serverTimestamp()
+                });
 
-                const updatedSnap = await getDoc(userRef);
-                currentUser = updatedSnap.exists()
-                    ? updatedSnap.data()
-                    : { ...currentUser, balance: Number(currentUser.balance || 0) + 0.200 };
-                updateBalanceDisplay(Number(currentUser.balance || 0));
-
-                alert("تم إرسال التسجيل الصوتي بنجاح وإضافة 0.200 د.ت لرصيدك!");
+                alert("تم إرسال التسجيل بنجاح وأصبح قيد المراجعة (0.200 د.ت بعد الاعتماد).");
 
                 currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
                 document.getElementById('task-phrase').textContent = `"${phrases[currentPhraseIndex]}"`;
@@ -367,13 +379,17 @@
                 audioPlayer.load();
                 audioPlayer.classList.add('hidden');
 
-                document.getElementById('submit-audio-btn').classList.add('hidden');
+                submitBtn.classList.add('hidden');
                 document.getElementById('stop-rec-btn').classList.add('hidden');
                 document.getElementById('start-rec-btn').classList.remove('hidden');
                 document.getElementById('rec-status').textContent = 'اضغط على زر التسجيل لقراءة العبارة التالية';
             } catch (error) {
-                console.error("Error submitting audio:", error);
-                alert("حدث خطأ أثناء تحديث الرصيد في قاعدة البيانات.");
+                console.error("Error submitting task:", error);
+                alert("حدث خطأ أثناء إرسال المهمة الصوتية إلى قاعدة البيانات.");
+            } finally {
+                isSubmittingTask = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'إرسال التسجيل للمراجعة (0.200 د.ت)';
             }
         };
 
@@ -417,9 +433,7 @@
             document.getElementById('card-balance').textContent = formatted;
         }
 
-        // تأمين إغلاق الميكروفون عند إغلاق الصفحة أو مغادرتها
         window.addEventListener("beforeunload", stopRecorderAndMicrophone);
-        window.__testFirestore = { db, doc, updateDoc, increment, getCurrentUid: () => currentUserId };
     </script>
 </body>
 </html>

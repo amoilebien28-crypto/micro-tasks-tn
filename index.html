@@ -167,7 +167,8 @@
 
         let currentUser = null;
         let currentUserId = null;
-        let mediaRecorder;
+        let mediaRecorder = null;
+        let audioStream = null;
         let audioChunks = [];
         let audioBlob = null;
 
@@ -179,6 +180,26 @@
             "بربي كيفاش نعمل باش نجدد الباسبور وإلا بطاقة عدد ثلاثة؟"
         ];
         let currentPhraseIndex = 0;
+
+        // دالة إيقاف الميكروفون وتحرير المسارات الصوتية فوراً
+        function releaseMicrophoneStream() {
+            if (audioStream) {
+                audioStream.getTracks().forEach((track) => track.stop());
+                audioStream = null;
+            }
+        }
+
+        function stopRecorderAndMicrophone() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                try {
+                    mediaRecorder.stop();
+                } catch (err) {
+                    console.error("Error stopping MediaRecorder:", err);
+                }
+            }
+            mediaRecorder = null;
+            releaseMicrophoneStream();
+        }
 
         function resetViews() {
             document.getElementById('dashboard-section').classList.add('hidden');
@@ -218,6 +239,7 @@
 
         onAuthStateChanged(auth, async (firebaseUser) => {
             if (!firebaseUser) {
+                stopRecorderAndMicrophone();
                 currentUser = null;
                 currentUserId = null;
                 resetViews();
@@ -262,6 +284,7 @@
         };
 
         window.logout = async function() {
+            stopRecorderAndMicrophone();
             try {
                 await signOut(auth);
             } catch (error) {
@@ -270,13 +293,18 @@
         };
 
         window.startRecording = async function() {
+            stopRecorderAndMicrophone();
             audioChunks = [];
+            audioBlob = null;
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(audioStream);
 
                 mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
+                    if (event.data && event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
                 };
 
                 mediaRecorder.onstop = () => {
@@ -286,6 +314,7 @@
                     audioPlayer.src = audioUrl;
                     audioPlayer.classList.remove('hidden');
                     document.getElementById('submit-audio-btn').classList.remove('hidden');
+                    releaseMicrophoneStream();
                 };
 
                 mediaRecorder.start();
@@ -293,6 +322,7 @@
                 document.getElementById('stop-rec-btn').classList.remove('hidden');
                 document.getElementById('rec-status').textContent = '🔴 جاري التسجيل... اقرأ الجملة بوضوح بالدارجة';
             } catch (err) {
+                releaseMicrophoneStream();
                 alert('الرجاء السماح للمتصفح بالوصول إلى الميكروفون.');
                 console.error(err);
             }
@@ -303,12 +333,18 @@
                 mediaRecorder.stop();
                 document.getElementById('stop-rec-btn').classList.add('hidden');
                 document.getElementById('start-rec-btn').classList.remove('hidden');
-                document.getElementById('rec-status').textContent = '✅ تم إيقاف التسجيل. يمكنك الاستماع أو الإرسال.';
+                document.getElementById('rec-status').textContent = '✅ تم إيقاف التسجيل وإغلاق الميكروفون. يمكنك الاستماع أو الإرسال.';
+            } else {
+                releaseMicrophoneStream();
             }
         };
 
         window.submitAudioTask = async function() {
             if (!audioBlob || !currentUserId) return;
+
+            // إغلاق الميكروفون فوراً عند الإرسال
+            stopRecorderAndMicrophone();
+
             try {
                 const userRef = doc(db, "users", currentUserId);
                 await updateDoc(userRef, { balance: increment(0.200) });
@@ -325,8 +361,15 @@
                 document.getElementById('task-phrase').textContent = `"${phrases[currentPhraseIndex]}"`;
 
                 audioBlob = null;
-                document.getElementById('audio-preview').classList.add('hidden');
+                const audioPlayer = document.getElementById('audio-preview');
+                audioPlayer.pause();
+                audioPlayer.removeAttribute('src');
+                audioPlayer.load();
+                audioPlayer.classList.add('hidden');
+
                 document.getElementById('submit-audio-btn').classList.add('hidden');
+                document.getElementById('stop-rec-btn').classList.add('hidden');
+                document.getElementById('start-rec-btn').classList.remove('hidden');
                 document.getElementById('rec-status').textContent = 'اضغط على زر التسجيل لقراءة العبارة التالية';
             } catch (error) {
                 console.error("Error submitting audio:", error);
@@ -373,6 +416,9 @@
             document.getElementById('display-balance').textContent = formatted;
             document.getElementById('card-balance').textContent = formatted;
         }
+
+        // تأمين إغلاق الميكروفون عند إغلاق الصفحة أو مغادرتها
+        window.addEventListener("beforeunload", stopRecorderAndMicrophone);
     </script>
 </body>
 </html>

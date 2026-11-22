@@ -19,7 +19,7 @@
         <div id="user-info" class="hidden flex items-center space-x-4 space-x-reverse">
             <div class="text-right">
                 <span id="display-username" class="font-bold text-indigo-600 block text-sm"></span>
-                <span id="balance-container" class="text-xs text-slate-500">الرصيد: <strong id="display-balance" class="text-emerald-600">0.000</strong> د.ت</span>
+                <span id="balance-container" class="text-xs text-slate-500">الرصيد: <strong id="display-balance" class="text-emerald-600">0.000</strong></span>
             </div>
             <button onclick="logout()" class="bg-rose-100 text-rose-600 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-rose-200 transition">خروج</button>
         </div>
@@ -32,19 +32,19 @@
         <div id="login-section" class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-slate-800">تسجيل الدخول</h2>
-                <p class="text-sm text-slate-500 mt-1">ادخل بـ admin / admin للإدارة أو بكود الخدّام</p>
+                <p class="text-sm text-slate-500 mt-1">سجّل الدخول بالبريد الإلكتروني وكلمة السر</p>
             </div>
             <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-1">كود المستخدم (Username)</label>
-                    <input type="text" id="username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" placeholder="admin">
+                    <label class="block text-sm font-semibold text-slate-600 mb-1">البريد الإلكتروني (Email)</label>
+                    <input type="email" id="email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" placeholder="example@voicetn.tn">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-600 mb-1">كلمة السر (Password)</label>
-                    <input type="password" id="password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" placeholder="admin">
+                    <input type="password" id="password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" placeholder="••••••••">
                 </div>
                 <div id="login-error" class="text-rose-500 text-sm hidden text-center"></div>
-                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">دخول</button>
+                <button type="submit" id="login-btn" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">دخول</button>
             </form>
         </div>
 
@@ -103,20 +103,24 @@
         <div id="admin-dashboard-section" class="hidden w-full max-w-lg space-y-6">
             <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
                 <h2 class="text-2xl font-bold text-slate-800 mb-2">لوحة تحكم الإدارة (Admin Panel)</h2>
-                <p class="text-sm text-slate-500 mb-6">إنشاء حسابات جديدة للمستخدمين (الخدّام)</p>
+                <p class="text-sm text-slate-500 mb-6">إنشاء حسابات جديدة للمستخدمين (الخدّام) يتم عبر Firebase Authentication ثم ربط ملفهم في Firestore</p>
                 
-                <form onsubmit="createNewUser(event)" class="space-y-4">
+                <form onsubmit="createNewUserProfile(event)" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">كود المستخدم الجديد (Username)</label>
-                        <input type="text" id="new-username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: mourad01">
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">معرّف المستخدم UID من Authentication</label>
+                        <input type="text" id="new-uid" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: bTat7DpZIbRdxFumRTuT9SPd8bo2">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">كلمة السر (Password)</label>
-                        <input type="text" id="new-password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="كلمة السر">
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">البريد الإلكتروني للمستخدم (Email)</label>
+                        <input type="email" id="new-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="worker1@voicetn.tn">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">كود المستخدم (Username)</label>
+                        <input type="text" id="new-username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: worker1">
                     </div>
                     <div id="admin-msg" class="text-emerald-600 text-sm hidden text-center font-bold"></div>
                     <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
-                        إضافة مستخدم جديد
+                        حفظ ملف المستخدم في Firestore
                     </button>
                 </form>
             </div>
@@ -130,7 +134,20 @@
     <!-- Firebase Logic & Audio Recorder -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, doc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            updateDoc,
+            increment
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBujuHLl9yrdUBjdW8r6N9UlR3-DmtR0RU",
@@ -144,6 +161,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
         let currentUser = null;
@@ -162,64 +180,93 @@
         ];
         let currentPhraseIndex = 0;
 
-        window.handleLogin = async function(event) {
-            event.preventDefault();
-            const usernameInput = document.getElementById('username').value.trim();
-            const passwordInput = document.getElementById('password').value.trim();
-            const errorDiv = document.getElementById('login-error');
-            errorDiv.classList.add('hidden');
+        function resetViews() {
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('admin-dashboard-section').classList.add('hidden');
+            document.getElementById('user-info').classList.add('hidden');
+            document.getElementById('login-section').classList.add('hidden');
+        }
 
-            if (usernameInput === 'admin' && passwordInput === 'admin') {
-                currentUser = { username: 'admin', role: 'admin' };
-                currentUserId = 'admin_local';
+        async function loadUserProfile(firebaseUser) {
+            const userRef = doc(db, "users", firebaseUser.uid);
+            const snap = await getDoc(userRef);
 
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('user-info').classList.remove('hidden');
-                document.getElementById('display-username').textContent = 'مدير النظام (Admin)';
+            if (!snap.exists()) {
+                await signOut(auth);
+                throw new Error("ملف المستخدم غير موجود في قاعدة البيانات Firestore.");
+            }
+
+            currentUserId = firebaseUser.uid;
+            currentUser = snap.data();
+
+            resetViews();
+            document.getElementById('user-info').classList.remove('hidden');
+            document.getElementById('display-username').textContent =
+                currentUser.role === 'admin'
+                    ? `${currentUser.username || 'Admin'} (مدير النظام)`
+                    : (currentUser.username || firebaseUser.email);
+
+            if (currentUser.role === 'admin') {
                 document.getElementById('balance-container').classList.add('hidden');
                 document.getElementById('admin-dashboard-section').classList.remove('hidden');
+            } else {
+                document.getElementById('balance-container').classList.remove('hidden');
+                document.getElementById('dashboard-section').classList.remove('hidden');
+                updateBalanceDisplay(Number(currentUser.balance || 0));
+            }
+        }
+
+        onAuthStateChanged(auth, async (firebaseUser) => {
+            if (!firebaseUser) {
+                currentUser = null;
+                currentUserId = null;
+                resetViews();
+                document.getElementById('login-section').classList.remove('hidden');
                 return;
             }
 
             try {
-                const usersRef = collection(db, "users");
-                const q = query(usersRef, where("username", "==", usernameInput), where("password", "==", passwordInput));
-                const querySnapshot = await getDocs(q);
-
-                if (querySnapshot.empty) {
-                    errorDiv.textContent = "الكود أو كلمة السر غير صحيحة!";
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-
-                querySnapshot.forEach((docSnap) => {
-                    currentUserId = docSnap.id;
-                    currentUser = docSnap.data();
-                });
-
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('user-info').classList.remove('hidden');
-                document.getElementById('display-username').textContent = currentUser.username;
-
-                document.getElementById('balance-container').classList.remove('hidden');
-                document.getElementById('dashboard-section').classList.remove('hidden');
-                updateBalanceDisplay(currentUser.balance || 0);
-
+                await loadUserProfile(firebaseUser);
             } catch (error) {
-                console.error("Login Error: ", error);
-                errorDiv.textContent = "حدث خطأ في الاتصال بقاعدة البيانات.";
+                console.error("Profile error:", error);
+                const errorDiv = document.getElementById('login-error');
+                errorDiv.textContent = error.message || "تعذر تحميل بيانات الحساب.";
                 errorDiv.classList.remove('hidden');
+                resetViews();
+                document.getElementById('login-section').classList.remove('hidden');
+            }
+        });
+
+        window.handleLogin = async function(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('email').value.trim();
+            const passwordInput = document.getElementById('password').value.trim();
+            const errorDiv = document.getElementById('login-error');
+            const loginBtn = document.getElementById('login-btn');
+
+            errorDiv.classList.add('hidden');
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'جاري التحقق...';
+
+            try {
+                await signInWithEmailAndPassword(auth, emailInput, passwordInput);
+                document.getElementById('login-form').reset();
+            } catch (error) {
+                console.error("Login Error:", error);
+                errorDiv.textContent = "البريد الإلكتروني أو كلمة السر غير صحيحة.";
+                errorDiv.classList.remove('hidden');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'دخول';
             }
         };
 
-        window.logout = function() {
-            currentUser = null;
-            currentUserId = null;
-            document.getElementById('dashboard-section').classList.add('hidden');
-            document.getElementById('admin-dashboard-section').classList.add('hidden');
-            document.getElementById('user-info').classList.add('hidden');
-            document.getElementById('login-section').classList.remove('hidden');
-            document.getElementById('login-form').reset();
+        window.logout = async function() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Logout Error:", error);
+            }
         };
 
         // Voice Recording Functions
@@ -228,7 +275,7 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
-                
+
                 mediaRecorder.ondataavailable = (event) => {
                     audioChunks.push(event.data);
                 };
@@ -264,59 +311,64 @@
         window.submitAudioTask = async function() {
             if (!audioBlob || !currentUserId) return;
             try {
-                // زيادة الرصيد 0.200 د.ت في Firebase
                 const userRef = doc(db, "users", currentUserId);
                 await updateDoc(userRef, { balance: increment(0.200) });
-                currentUser.balance = (currentUser.balance || 0) + 0.200;
-                updateBalanceDisplay(currentUser.balance);
+
+                const updatedSnap = await getDoc(userRef);
+                currentUser = updatedSnap.exists() ? updatedSnap.data() : { ...currentUser, balance: Number(currentUser.balance || 0) + 0.200 };
+                updateBalanceDisplay(Number(currentUser.balance || 0));
 
                 alert("تم إرسال التسجيل الصوتي بنجاح وإضافة 0.200 د.ت لرصيدك!");
-                
-                // الانتقال للجملة التالية أوتوماتيكياً
+
                 currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
                 document.getElementById('task-phrase').textContent = `"${phrases[currentPhraseIndex]}"`;
-                
-                // إعادة ضبط الواجهة
+
                 audioBlob = null;
                 document.getElementById('audio-preview').classList.add('hidden');
                 document.getElementById('submit-audio-btn').classList.add('hidden');
                 document.getElementById('rec-status').textContent = 'اضغط على زر التسجيل لقراءة العبارة التالية';
-
             } catch (error) {
                 console.error("Error submitting audio:", error);
-                alert("حدث خطأ أثناء حفظ التسجيل في قاعدة البيانات.");
+                alert("حدث خطأ أثناء تحديث الرصيد في قاعدة البيانات.");
             }
         };
 
-        window.createNewUser = async function(event) {
+        window.createNewUserProfile = async function(event) {
             event.preventDefault();
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert("غير مسموح إلا لمدير النظام.");
+                return;
+            }
+
+            const newUid = document.getElementById('new-uid').value.trim();
+            const newEmail = document.getElementById('new-email').value.trim();
             const newUsername = document.getElementById('new-username').value.trim();
-            const newPassword = document.getElementById('new-password').value.trim();
             const msgDiv = document.getElementById('admin-msg');
 
             try {
-                const newUserRef = doc(db, "users", newUsername);
+                const newUserRef = doc(db, "users", newUid);
                 await setDoc(newUserRef, {
+                    email: newEmail,
                     username: newUsername,
-                    password: newPassword,
                     balance: 0,
                     role: "worker"
                 });
 
-                msgDiv.textContent = `تم بنجاح إنشاء المستخدم: ${newUsername}`;
+                msgDiv.textContent = `تم حفظ ملف المستخدم (${newUsername}) بنجاح في Firestore.`;
                 msgDiv.classList.remove('hidden');
+                document.getElementById('new-uid').value = '';
+                document.getElementById('new-email').value = '';
                 document.getElementById('new-username').value = '';
-                document.getElementById('new-password').value = '';
-                
+
                 setTimeout(() => msgDiv.classList.add('hidden'), 4000);
             } catch (error) {
                 console.error(error);
-                alert("حدث خطأ أثناء إنشاء المستخدم.");
+                alert("حدث خطأ أثناء إنشاء ملف المستخدم. تأكد من أن الـ UID صحيح ومن صلاحيات الأدمن.");
             }
         };
 
         function updateBalanceDisplay(balance) {
-            const formatted = balance.toFixed(3) + " د.ت";
+            const formatted = Number(balance).toFixed(3) + " د.ت";
             document.getElementById('display-balance').textContent = formatted;
             document.getElementById('card-balance').textContent = formatted;
         }

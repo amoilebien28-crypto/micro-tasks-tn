@@ -257,9 +257,15 @@
 
         function sanitizeAudioDataUrl(dataUrl) {
             if (typeof dataUrl !== "string") return "";
-            return /^data:audio\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/i.test(dataUrl)
-                ? dataUrl
-                : "";
+            const trimmed = dataUrl.trim();
+            if (!trimmed.startsWith("data:audio/")) return "";
+            const commaIndex = trimmed.indexOf(",");
+            if (commaIndex === -1) return "";
+            const header = trimmed.slice(0, commaIndex);
+            const payload = trimmed.slice(commaIndex + 1).replace(/\s+/g, "");
+            if (!header.includes(";base64") || !payload) return "";
+            if (!/^[A-Za-z0-9+/=]+$/.test(payload)) return "";
+            return `${header},${payload}`;
         }
 
         function blobToDataUrl(blob) {
@@ -398,7 +404,8 @@
                 };
 
                 mediaRecorder.onstop = () => {
-                    audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const mimeType = mediaRecorder?.mimeType || 'audio/webm';
+                    audioBlob = new Blob(audioChunks, { type: mimeType });
                     const audioUrl = URL.createObjectURL(audioBlob);
                     const audioPlayer = document.getElementById('audio-preview');
                     audioPlayer.src = audioUrl;
@@ -600,7 +607,10 @@
                             </div>
                             ${
                                 safeAudioUrl
-                                    ? `<audio controls preload="none" src="${safeAudioUrl}" class="w-full h-10 rounded-lg"></audio>`
+                                    ? `<div class="bg-white border border-slate-200 rounded-xl p-2">
+                                           <span class="block text-xs text-slate-500 mb-1 font-semibold">🎧 الاستماع للتسجيل الصوتي:</span>
+                                           <audio controls preload="metadata" src="${safeAudioUrl}" class="w-full h-10"></audio>
+                                       </div>`
                                     : `<div class="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">المقطع الصوتي غير متوفر في هذه المهمة القديمة.</div>`
                             }
                         </div>

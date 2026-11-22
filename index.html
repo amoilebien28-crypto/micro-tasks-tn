@@ -28,7 +28,7 @@
     <!-- Main Content -->
     <main class="flex-grow flex items-center justify-center p-4">
         
-        <!-- 1. Login Section (ألوان جديدة واضحة للتحقق من التحديث) -->
+        <!-- 1. Login Section -->
         <div id="login-section" class="bg-emerald-950 text-emerald-50 p-8 rounded-2xl shadow-2xl w-full max-w-md border-2 border-emerald-400">
             <div class="text-center mb-6">
                 <span class="inline-block bg-amber-400 text-slate-950 text-xs font-extrabold px-3 py-1 rounded-full mb-2">نسخة محدثة - Firebase Auth</span>
@@ -73,7 +73,7 @@
                 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-6">
                     <span class="block text-xs text-slate-400 mb-2">اقرأ الجملة هذه بصوتك:</span>
                     <p id="task-phrase" class="text-xl font-bold text-slate-800 leading-relaxed">
-                        "ألو، بالله نحب نسأل على سوم الكرهبة والصيانة قداش تكلف في المداخيل الشهرية؟"
+                        "ألو، بالله نحب نسأل على سوم الكرهبة والصيانة قداش تكلف في الشهر؟"
                     </p>
                 </div>
 
@@ -101,7 +101,8 @@
         </div>
 
         <!-- 3. Admin Dashboard Section -->
-        <div id="admin-dashboard-section" class="hidden w-full max-w-lg space-y-6">
+        <div id="admin-dashboard-section" class="hidden w-full max-w-2xl space-y-6">
+            <!-- Create Worker Profile Card -->
             <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
                 <h2 class="text-2xl font-bold text-slate-800 mb-2">لوحة تحكم الإدارة (Admin Panel)</h2>
                 <p class="text-sm text-slate-500 mb-6">ربط حساب مستخدم تم إنشاؤه في Firebase Authentication بملفه في Firestore</p>
@@ -124,6 +125,22 @@
                         حفظ ملف المستخدم في Firestore
                     </button>
                 </form>
+            </div>
+
+            <!-- Pending Tasks Review Card -->
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">مراجعة المهام المعلقة (Pending)</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">اقبل المهمة الصحيحة لصرف +0.200 د.ت، أو ارفض المهمة غير السليمة</p>
+                    </div>
+                    <button onclick="loadPendingSubmissions()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition">
+                        🔄 تحديث القائمة
+                    </button>
+                </div>
+                <div id="pending-submissions-list" class="space-y-3 text-sm text-slate-500">
+                    جاري تحميل المهام...
+                </div>
             </div>
         </div>
 
@@ -148,6 +165,10 @@
             setDoc,
             collection,
             addDoc,
+            getDocs,
+            query,
+            where,
+            runTransaction,
             serverTimestamp
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -173,6 +194,7 @@
         let audioChunks = [];
         let audioBlob = null;
         let isSubmittingTask = false;
+        let busySubmissionIds = new Set();
 
         const phrases = [
             "ألو، بالله نحب نسأل على سوم الكرهبة والصيانة قداش تكلف في الشهر؟",
@@ -182,6 +204,14 @@
             "بربي كيفاش نعمل باش نجدد الباسبور وإلا بطاقة عدد ثلاثة؟"
         ];
         let currentPhraseIndex = 0;
+
+        function escapeHtml(text) {
+            return String(text ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
 
         function releaseMicrophoneStream() {
             if (audioStream) {
@@ -231,6 +261,7 @@
             if (currentUser.role === 'admin') {
                 document.getElementById('balance-container').classList.add('hidden');
                 document.getElementById('admin-dashboard-section').classList.remove('hidden');
+                await loadPendingSubmissions();
             } else {
                 document.getElementById('balance-container').classList.remove('hidden');
                 document.getElementById('dashboard-section').classList.remove('hidden');
@@ -390,6 +421,121 @@
                 isSubmittingTask = false;
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'إرسال التسجيل للمراجعة (0.200 د.ت)';
+            }
+        };
+
+        window.loadPendingSubmissions = async function() {
+            const container = document.getElementById('pending-submissions-list');
+            if (!currentUser || currentUser.role !== 'admin') return;
+
+            container.innerHTML = 'جاري تحميل المهام المعلقة...';
+
+            try {
+                const q = query(collection(db, "task_submissions"), where("status", "==", "pending"));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-slate-500">لا توجد مهام معلقة حالياً.</div>';
+                    return;
+                }
+
+                const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+                items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+                container.innerHTML = items.map((item) => {
+                    const isBusy = busySubmissionIds.has(item.id);
+                    const safeId = escapeHtml(item.id);
+                    const safeUser = escapeHtml(item.username || item.userId || "مجهول");
+                    const safePhrase = escapeHtml(item.phraseText || "");
+                    const sizeKb = ((Number(item.audioSize || 0)) / 1024).toFixed(1);
+
+                    return `
+                        <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div class="space-y-1">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-bold text-indigo-700">${safeUser}</span>
+                                    <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">pending</span>
+                                    <span class="text-xs text-slate-400">حجم الصوت: ${sizeKb} KB</span>
+                                </div>
+                                <p class="text-slate-800 font-semibold text-sm">"${safePhrase}"</p>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button ${isBusy ? 'disabled' : ''} onclick="reviewSubmission('${safeId}', true)" class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition">
+                                    ✅ قبول (+0.200)
+                                </button>
+                                <button ${isBusy ? 'disabled' : ''} onclick="reviewSubmission('${safeId}', false)" class="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-lg transition">
+                                    ❌ رفض
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            } catch (error) {
+                console.error("Error loading pending submissions:", error);
+                container.innerHTML = '<div class="text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-3">تعذر تحميل المهام المعلقة.</div>';
+            }
+        };
+
+        window.reviewSubmission = async function(submissionId, approve) {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            if (busySubmissionIds.has(submissionId)) return;
+
+            busySubmissionIds.add(submissionId);
+            await loadPendingSubmissions();
+
+            try {
+                const subRef = doc(db, "task_submissions", submissionId);
+
+                await runTransaction(db, async (transaction) => {
+                    const subSnap = await transaction.get(subRef);
+                    if (!subSnap.exists()) {
+                        throw new Error("المهمة غير موجودة.");
+                    }
+
+                    const subData = subSnap.data();
+                    if (subData.status !== "pending") {
+                        throw new Error("تمت معالجة هذه المهمة مسبقاً.");
+                    }
+
+                    if (approve) {
+                        const targetUserId = subData.userId;
+                        if (!targetUserId) {
+                            throw new Error("معرّف المستخدم مفقود في المهمة.");
+                        }
+
+                        const userRef = doc(db, "users", targetUserId);
+                        const userSnap = await transaction.get(userRef);
+                        if (!userSnap.exists()) {
+                            throw new Error("ملف المستخدم غير موجود في users.");
+                        }
+
+                        const currentBalance = Number(userSnap.data().balance || 0);
+                        const reward = Number(subData.rewardAmount ?? 0.2);
+
+                        transaction.update(userRef, {
+                            balance: Number((currentBalance + reward).toFixed(3))
+                        });
+                        transaction.update(subRef, {
+                            status: "approved",
+                            reviewedBy: currentUserId,
+                            reviewedAt: serverTimestamp()
+                        });
+                    } else {
+                        transaction.update(subRef, {
+                            status: "rejected",
+                            reviewedBy: currentUserId,
+                            reviewedAt: serverTimestamp()
+                        });
+                    }
+                });
+
+                alert(approve ? "تم قبول المهمة وإضافة 0.200 د.ت إلى رصيد المستخدم." : "تم رفض المهمة ولم يُضف أي رصيد.");
+            } catch (error) {
+                console.error("Review error:", error);
+                alert(error.message || "حدث خطأ أثناء مراجعة المهمة.");
+            } finally {
+                busySubmissionIds.delete(submissionId);
+                await loadPendingSubmissions();
             }
         };
 

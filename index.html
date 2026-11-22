@@ -101,8 +101,8 @@
         </div>
 
         <!-- 3. Admin Dashboard Section -->
-        <div id="admin-dashboard-section" class="hidden w-full max-w-4xl space-y-6">
-            <!-- Users & Balances Table Card -->
+        <div id="admin-dashboard-section" class="hidden w-full max-w-5xl space-y-6">
+            <!-- Users & Balances Table Card (Top) -->
             <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
                 <div class="flex justify-between items-center mb-4">
                     <div>
@@ -120,16 +120,45 @@
                                 <th class="py-3 px-4 font-bold">المستخدم</th>
                                 <th class="py-3 px-4 font-bold">البريد الإلكتروني</th>
                                 <th class="py-3 px-4 font-bold">الدور</th>
+                                <th class="py-3 px-4 font-bold">كلمة السر</th>
                                 <th class="py-3 px-4 font-bold">الرصيد</th>
+                                <th class="py-3 px-4 font-bold">تغيير كلمة السر</th>
                             </tr>
                         </thead>
                         <tbody id="admin-users-tbody" class="divide-y divide-slate-100">
                             <tr>
-                                <td colspan="4" class="py-4 px-4 text-center text-slate-400">جاري تحميل المستخدمين...</td>
+                                <td colspan="6" class="py-4 px-4 text-center text-slate-400">جاري تحميل المستخدمين...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Create New Worker Account Card -->
+            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
+                <h3 class="text-xl font-bold text-slate-800 mb-1">إضافة مستخدم جديد مباشرة</h3>
+                <p class="text-sm text-slate-500 mb-4">ينشئ الحساب في Firebase Authentication ويحفظ ملفه في Firestore دون تسجيل خروجك كأدمن</p>
+                
+                <form onsubmit="createNewWorkerAccount(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">كود المستخدم (Username)</label>
+                        <input type="text" id="new-username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: worker2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">البريد الإلكتروني (Email)</label>
+                        <input type="email" id="new-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="worker2@voicetn.tn">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">كلمة السر (6 أحرف على الأقل)</label>
+                        <input type="password" id="new-password" minlength="6" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="••••••••">
+                    </div>
+                    <div class="md:col-span-3">
+                        <div id="admin-msg" class="text-emerald-600 text-sm hidden text-center font-bold mb-2"></div>
+                        <button type="submit" id="create-user-btn" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
+                            إنشاء حساب المستخدم وحفظه في قاعدة البيانات
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <!-- Pending Tasks Review Card -->
@@ -147,31 +176,6 @@
                     جاري تحميل المهام...
                 </div>
             </div>
-
-            <!-- Create Worker Profile Card -->
-            <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
-                <h3 class="text-xl font-bold text-slate-800 mb-1">ربط حساب مستخدم جديد</h3>
-                <p class="text-sm text-slate-500 mb-4">ربط حساب مستخدم تم إنشاؤه في Firebase Authentication بملفه في Firestore</p>
-                
-                <form onsubmit="createNewUserProfile(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">معرّف المستخدم UID من Authentication</label>
-                        <input type="text" id="new-uid" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: bTat7DpZIbRdxFumRTuT9SPd8bo2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">البريد الإلكتروني للمستخدم (Email)</label>
-                        <input type="email" id="new-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="worker1@voicetn.tn">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-600 mb-1">كود المستخدم (Username)</label>
-                        <input type="text" id="new-username" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="مثال: worker1">
-                    </div>
-                    <div id="admin-msg" class="text-emerald-600 text-sm hidden text-center font-bold"></div>
-                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
-                        حفظ ملف المستخدم في Firestore
-                    </button>
-                </form>
-            </div>
         </div>
 
     </main>
@@ -185,6 +189,8 @@
         import {
             getAuth,
             signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            sendPasswordResetEmail,
             signOut,
             onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -216,6 +222,10 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // نسخة ثانوية لإنشاء حسابات العمال دون تسجيل خروج الأدمن
+        const secondaryApp = initializeApp(firebaseConfig, "SecondaryWorkerCreator");
+        const secondaryAuth = getAuth(secondaryApp);
 
         let currentUser = null;
         let currentUserId = null;
@@ -458,12 +468,12 @@
             const tbody = document.getElementById('admin-users-tbody');
             if (!currentUser || currentUser.role !== 'admin') return;
 
-            tbody.innerHTML = '<tr><td colspan="4" class="py-4 px-4 text-center text-slate-400">جاري تحميل المستخدمين...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="py-4 px-4 text-center text-slate-400">جاري تحميل المستخدمين...</td></tr>';
 
             try {
                 const snap = await getDocs(collection(db, "users"));
                 if (snap.empty) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="py-4 px-4 text-center text-slate-400">لا يوجد مستخدمون مسجلون.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="py-4 px-4 text-center text-slate-400">لا يوجد مستخدمون مسجلون.</td></tr>';
                     return;
                 }
 
@@ -471,6 +481,7 @@
                     const u = d.data();
                     const safeUsername = escapeHtml(u.username || d.id);
                     const safeEmail = escapeHtml(u.email || "-");
+                    const rawEmailAttr = escapeHtml(u.email || "");
                     const safeRole = escapeHtml(u.role || "worker");
                     const balanceNum = Number(u.balance || 0).toFixed(3);
                     const badgeClass = u.role === 'admin'
@@ -484,7 +495,15 @@
                             <td class="py-3 px-4">
                                 <span class="text-xs font-bold px-2.5 py-1 rounded-full ${badgeClass}">${safeRole}</span>
                             </td>
+                            <td class="py-3 px-4 text-slate-400 font-mono select-none">••••••••</td>
                             <td class="py-3 px-4 font-extrabold text-emerald-600">${balanceNum} د.ت</td>
+                            <td class="py-3 px-4">
+                                ${u.email ? `
+                                    <button onclick="sendUserPasswordReset('${rawEmailAttr}')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                                        🔑 إرسال رابط تغيير
+                                    </button>
+                                ` : '<span class="text-xs text-slate-400">غير متاح</span>'}
+                            </td>
                         </tr>
                     `;
                 });
@@ -492,7 +511,18 @@
                 tbody.innerHTML = rows.join("");
             } catch (error) {
                 console.error("Error loading users:", error);
-                tbody.innerHTML = '<tr><td colspan="4" class="py-4 px-4 text-center text-rose-600">تعذر تحميل قائمة المستخدمين.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="py-4 px-4 text-center text-rose-600">تعذر تحميل قائمة المستخدمين.</td></tr>';
+            }
+        };
+
+        window.sendUserPasswordReset = async function(targetEmail) {
+            if (!currentUser || currentUser.role !== 'admin' || !targetEmail) return;
+            try {
+                await sendPasswordResetEmail(auth, targetEmail);
+                alert(`تم إرسال رابط تغيير كلمة السر إلى البريد الإلكتروني: ${targetEmail}`);
+            } catch (error) {
+                console.error("Password reset error:", error);
+                alert("تعذر إرسال رابط تغيير كلمة السر. تأكد من صحة البريد الإلكتروني.");
             }
         };
 
@@ -618,38 +648,50 @@
             }
         };
 
-        window.createNewUserProfile = async function(event) {
+        window.createNewWorkerAccount = async function(event) {
             event.preventDefault();
             if (!currentUser || currentUser.role !== 'admin') {
                 alert("غير مسموح إلا لمدير النظام.");
                 return;
             }
 
-            const newUid = document.getElementById('new-uid').value.trim();
-            const newEmail = document.getElementById('new-email').value.trim();
             const newUsername = document.getElementById('new-username').value.trim();
+            const newEmail = document.getElementById('new-email').value.trim();
+            const newPassword = document.getElementById('new-password').value;
             const msgDiv = document.getElementById('admin-msg');
+            const btn = document.getElementById('create-user-btn');
+
+            btn.disabled = true;
+            btn.textContent = 'جاري إنشاء الحساب...';
 
             try {
-                const newUserRef = doc(db, "users", newUid);
-                await setDoc(newUserRef, {
+                // إنشاء الحساب في Firebase Auth عبر النسخة الثانوية
+                const cred = await createUserWithEmailAndPassword(secondaryAuth, newEmail, newPassword);
+                const createdUid = cred.user.uid;
+                await signOut(secondaryAuth);
+
+                // حفظ ملف المستخدم في Firestore بصلاحية الأدمن الرئيسية
+                await setDoc(doc(db, "users", createdUid), {
                     email: newEmail,
                     username: newUsername,
                     balance: 0,
                     role: "worker"
                 });
 
-                msgDiv.textContent = `تم حفظ ملف المستخدم (${newUsername}) بنجاح في Firestore.`;
+                msgDiv.textContent = `تم إنشاء حساب (${newUsername}) بنجاح! يمكنه الدخول الآن بـ ${newEmail} وكلمة السر المحددة.`;
                 msgDiv.classList.remove('hidden');
-                document.getElementById('new-uid').value = '';
-                document.getElementById('new-email').value = '';
                 document.getElementById('new-username').value = '';
+                document.getElementById('new-email').value = '';
+                document.getElementById('new-password').value = '';
 
                 await loadUsersList();
-                setTimeout(() => msgDiv.classList.add('hidden'), 4000);
+                setTimeout(() => msgDiv.classList.add('hidden'), 6000);
             } catch (error) {
-                console.error(error);
-                alert("حدث خطأ أثناء إنشاء ملف المستخدم. تأكد من أن الـ UID صحيح ومن صلاحيات الأدمن.");
+                console.error("Create worker error:", error);
+                alert(error.message || "تعذر إنشاء حساب المستخدم. تأكد من أن البريد غير مستعمل مسبقاً.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'إنشاء حساب المستخدم وحفظه في قاعدة البيانات';
             }
         };
 

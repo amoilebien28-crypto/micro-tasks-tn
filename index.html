@@ -28,23 +28,24 @@
     <!-- Main Content -->
     <main class="flex-grow flex items-center justify-center p-4">
         
-        <!-- 1. Login Section -->
-        <div id="login-section" class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+        <!-- 1. Login Section (ألوان جديدة واضحة للتحقق من التحديث) -->
+        <div id="login-section" class="bg-emerald-950 text-emerald-50 p-8 rounded-2xl shadow-2xl w-full max-w-md border-2 border-emerald-400">
             <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-slate-800">تسجيل الدخول</h2>
-                <p class="text-sm text-slate-500 mt-1">سجّل الدخول بالبريد الإلكتروني وكلمة السر</p>
+                <span class="inline-block bg-amber-400 text-slate-950 text-xs font-extrabold px-3 py-1 rounded-full mb-2">نسخة محدثة - Firebase Auth</span>
+                <h2 class="text-2xl font-bold text-emerald-300">تسجيل الدخول</h2>
+                <p class="text-sm text-emerald-200/80 mt-1">سجّل الدخول بالبريد الإلكتروني وكلمة السر</p>
             </div>
             <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-1">البريد الإلكتروني (Email)</label>
-                    <input type="email" id="email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" placeholder="example@voicetn.tn">
+                    <label class="block text-sm font-semibold text-emerald-200 mb-1">البريد الإلكتروني (Email)</label>
+                    <input type="email" id="email" required class="w-full px-4 py-3 rounded-xl bg-emerald-900 text-white placeholder-emerald-400/60 border border-emerald-600 focus:ring-2 focus:ring-amber-400 focus:outline-none transition" placeholder="example@voicetn.tn">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-1">كلمة السر (Password)</label>
-                    <input type="password" id="password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" placeholder="••••••••">
+                    <label class="block text-sm font-semibold text-emerald-200 mb-1">كلمة السر (Password)</label>
+                    <input type="password" id="password" required class="w-full px-4 py-3 rounded-xl bg-emerald-900 text-white placeholder-emerald-400/60 border border-emerald-600 focus:ring-2 focus:ring-amber-400 focus:outline-none transition" placeholder="••••••••">
                 </div>
-                <div id="login-error" class="text-rose-500 text-sm hidden text-center"></div>
-                <button type="submit" id="login-btn" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">دخول</button>
+                <div id="login-error" class="text-amber-300 bg-rose-950/80 border border-rose-500/50 rounded-xl py-2 px-3 text-sm hidden text-center"></div>
+                <button type="submit" id="login-btn" class="w-full bg-amber-400 text-slate-950 font-extrabold py-3 rounded-xl hover:bg-amber-300 transition shadow-lg shadow-amber-950/50">دخول</button>
             </form>
         </div>
 
@@ -103,7 +104,7 @@
         <div id="admin-dashboard-section" class="hidden w-full max-w-lg space-y-6">
             <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
                 <h2 class="text-2xl font-bold text-slate-800 mb-2">لوحة تحكم الإدارة (Admin Panel)</h2>
-                <p class="text-sm text-slate-500 mb-6">إنشاء حسابات جديدة للمستخدمين (الخدّام) يتم عبر Firebase Authentication ثم ربط ملفهم في Firestore</p>
+                <p class="text-sm text-slate-500 mb-6">ربط حساب مستخدم تم إنشاؤه في Firebase Authentication بملفه في Firestore</p>
                 
                 <form onsubmit="createNewUserProfile(event)" class="space-y-4">
                     <div>
@@ -170,7 +171,6 @@
         let audioChunks = [];
         let audioBlob = null;
 
-        // Dynamic Phrases for Voice Tasks
         const phrases = [
             "ألو، بالله نحب نسأل على سوم الكرهبة والصيانة قداش تكلف في الشهر؟",
             "وينها محطة اللواج من هنا، قداش تبعد عليا؟",
@@ -269,7 +269,6 @@
             }
         };
 
-        // Voice Recording Functions
         window.startRecording = async function() {
             audioChunks = [];
             try {
@@ -315,7 +314,9 @@
                 await updateDoc(userRef, { balance: increment(0.200) });
 
                 const updatedSnap = await getDoc(userRef);
-                currentUser = updatedSnap.exists() ? updatedSnap.data() : { ...currentUser, balance: Number(currentUser.balance || 0) + 0.200 };
+                currentUser = updatedSnap.exists()
+                    ? updatedSnap.data()
+                    : { ...currentUser, balance: Number(currentUser.balance || 0) + 0.200 };
                 updateBalanceDisplay(Number(currentUser.balance || 0));
 
                 alert("تم إرسال التسجيل الصوتي بنجاح وإضافة 0.200 د.ت لرصيدك!");

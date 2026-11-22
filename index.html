@@ -419,6 +419,7 @@
 
         // تأمين إغلاق الميكروفون عند إغلاق الصفحة أو مغادرتها
         window.addEventListener("beforeunload", stopRecorderAndMicrophone);
+        window.__testFirestore = { db, doc, updateDoc, increment, getCurrentUid: () => currentUserId };
     </script>
 </body>
 </html>
